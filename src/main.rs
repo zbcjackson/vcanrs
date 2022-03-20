@@ -45,7 +45,7 @@ fn run() -> Result<(), Error> {
     let path = "../vcanr";
     let repo = Repository::open(path)?;
     let mut rev_walk = repo.revwalk()?;
-    rev_walk.set_sorting(git2::Sort::NONE)?;
+    rev_walk.set_sorting(git2::Sort::REVERSE)?;
     println!("Path: {}", repo.path().display());
     macro_rules! filter_try {
         ($e:expr) => {
