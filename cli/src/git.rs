@@ -46,7 +46,7 @@ impl Repo for Git {
             let current = commit.tree().unwrap();
             let mut diff = repo.diff_tree_to_tree(previous.as_ref(), Some(&current), None).unwrap();
             let mut opts = DiffFindOptions::new();
-            opts.break_rewrite_threshold(30);
+            opts.break_rewrites_for_renames_only(true);
             opts.all(true);
             diff.find_similar(Some(&mut opts)).unwrap();
             diff.deltas().for_each(|delta| {
