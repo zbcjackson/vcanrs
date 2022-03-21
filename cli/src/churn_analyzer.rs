@@ -31,10 +31,7 @@ impl ChurnAnalyzer {
                         self.stat.remove(&delta.old_file);
                     }
                     _ => {
-                        match self.stat.get_mut(&delta.old_file) {
-                            None => { self.stat.insert(delta.new_file.to_string(), 1);}
-                            Some(x) => {*x += 1;}
-                        }
+                        *self.stat.entry(delta.old_file.to_string()).or_insert(0) += 1;
                     }
                 }
             }
