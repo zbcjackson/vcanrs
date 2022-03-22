@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use git2::Delta;
-use crate::{Git, Repo};
+use crate::git::{Git, Repo};
 use crate::churn_reporter::ChurnReporter;
 
 pub struct ChurnAnalyzer {
