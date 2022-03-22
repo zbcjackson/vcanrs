@@ -1,4 +1,4 @@
-use git2::{DiffFindOptions, Repository, Time};
+use git2::{DiffFindOptions, Patch, Repository, Time};
 
 pub struct Delta {
     pub(crate) old_file: String,
@@ -49,10 +49,14 @@ impl Repo for Git {
             opts.break_rewrites_for_renames_only(true);
             opts.all(true);
             diff.find_similar(Some(&mut opts)).unwrap();
-            diff.deltas().for_each(|delta| {
-               let d = Delta{old_file: String::from(delta.old_file().path().unwrap().to_str().unwrap()), new_file: String::from(delta.new_file().path().unwrap().to_str().unwrap()), status: delta.status(), lines: 0 };
+
+            for i in 0..diff.deltas().len() {
+                let patch = Patch::from_diff(&diff, i).unwrap().unwrap();
+                let delta = patch.delta();
+                let (_context, additions, deletions) = patch.line_stats().unwrap();
+                let d = Delta{old_file: String::from(delta.old_file().path().unwrap().to_str().unwrap()), new_file: String::from(delta.new_file().path().unwrap().to_str().unwrap()), status: delta.status(), lines: (additions + deletions) as i32 };
                 c.deltas.push(d);
-            });
+            }
             commits.push(c);
         }
         commits
