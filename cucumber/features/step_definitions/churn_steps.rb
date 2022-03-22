@@ -7,7 +7,7 @@ Given("there is a repo with commits") do |table|
 end
 
 When("churn analyze the repo") do
-  @report = shell "../cli/target/debug/vcanrs #{@path}"
+  @report = shell "../cli/target/debug/vcanrs churn #{@path}"
 end
 
 Then("the report shows") do |table|
