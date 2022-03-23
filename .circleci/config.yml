@@ -7,7 +7,7 @@ jobs:
       - checkout
       - run:
           name: Install dependencies
-          command: apt update && apt install -y cmake pkg-config ruby
+          command: apt update && apt install -y cmake pkg-config ruby ruby-dev
       - run:
           name: Config Git
           command: |
