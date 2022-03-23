@@ -33,21 +33,26 @@ jobs:
           name: Build Production
           working_directory: ./cli
           command: cargo build --locked --release --target x86_64-unknown-linux-gnu
+      - store_artifacts:
+          path: cli/target
+          destination: build
       - persist_to_workspace:
           root: .
           paths:
             - cli/target
 
   publish-github-release:
-    docker:
-      - image: circleci/golang:1.8
+    machine:
+      image: ubuntu-2004:current
     steps:
       - attach_workspace:
           at: .
       - run:
           name: "Publish Release on GitHub"
           command: |
-            go get github.com/tcnksm/ghr
+            GHR_VERSION=0.14.0
+            GHR_URL=https://github.com/tcnksm/ghr/releases/download/v${GHR_VERSION}/ghr_v${GHR_VERSION}_linux_amd64.tar.gz
+            wget "$GHR_URL" && tar xzf ghr_v${GHR_VERSION}_linux_amd64.tar.gz && mv ghr_v${GHR_VERSION}_linux_amd64/ghr /usr/bin/ghr && rm -r ghr_v${GHR_VERSION}_linux_amd64.tar.gz ghr_v${GHR_VERSION}_linux_amd64/
             VERSION=$(cli/target/x86_64-unknown-linux-gnu/release/vcanrs --version)
             ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./artifacts/
 
