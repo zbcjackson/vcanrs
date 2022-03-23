@@ -1,6 +1,6 @@
 version: 2.1
 jobs:
-  build:
+  build-linux:
     docker:
       - image: rust:1
     steps:
@@ -29,3 +29,32 @@ jobs:
             gem install bundler -v 2.3.4
             bundle install
             bundle exec cucumber
+      - run:
+          name: Build Production
+          working_directory: ./cli
+          command: cargo build --locked --release --target x86_64-unknown-linux-gnu
+      - persist_to_workspace:
+          root: .
+          paths:
+            - cli/target
+
+  publish-github-release:
+    docker:
+      - image: cibuilds/github:0.10
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: "Publish Release on GitHub"
+          command: |
+            VERSION=$(cli/target/x86_64-unknown-linux-gnu/release/vcanrs --version)
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./artifacts/
+
+workflows:
+  ci:
+    jobs:
+      - build-linux
+      - publish-github-release:
+          context: public
+          requires:
+            - build-linux
