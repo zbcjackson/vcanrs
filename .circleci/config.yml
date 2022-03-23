@@ -15,24 +15,22 @@ jobs:
             git config --global user.email "test@gmail.com"
             git config --global user.name "test"
       - run:
-          name: Build
-          working_directory: ./cli
-          command: cargo build
-      - run:
           name: Test
           working_directory: ./cli
           command: cargo test
+      - run:
+          name: Build Production
+          working_directory: ./cli
+          command: cargo build --locked --release --target x86_64-unknown-linux-gnu
       - run:
           name: Cucumber
           working_directory: ./cucumber
           command: |
             gem install bundler -v 2.3.4
             bundle install
-            bundle exec cucumber
-      - run:
-          name: Build Production
-          working_directory: ./cli
-          command: cargo build --locked --release --target x86_64-unknown-linux-gnu
+            BIN_PATH=cli/target/x86_64-unknown-linux-gnu/release/vcanrs bundle exec cucumber --format junit --out test-results
+      - store_test_results:
+          path: cli/test-results
       - store_artifacts:
           path: cli/target/x86_64-unknown-linux-gnu/release/vcanrs
           destination: linux-build
