@@ -40,13 +40,14 @@ jobs:
 
   publish-github-release:
     docker:
-      - image: cibuilds/github:0.10
+      - image: circleci/golang:1.8
     steps:
       - attach_workspace:
           at: .
       - run:
           name: "Publish Release on GitHub"
           command: |
+            go get github.com/tcnksm/ghr
             VERSION=$(cli/target/x86_64-unknown-linux-gnu/release/vcanrs --version)
             ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./artifacts/
 

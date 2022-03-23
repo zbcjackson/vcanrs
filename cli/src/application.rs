@@ -4,7 +4,7 @@ use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
 #[clap(name = "vcanrs")]
-#[clap(about = "A repo analyze CLI", long_about = None)]
+#[clap(version, about, long_about = None)]
 struct Cli {
     #[clap(subcommand)]
     command: Commands,
