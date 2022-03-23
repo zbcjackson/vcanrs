@@ -37,8 +37,52 @@ jobs:
             mkdir -p artifacts
             mv cli/target/x86_64-unknown-linux-gnu/release/vcanrs artifacts/vcanrs-x86_64-unknown-linux-gnu
       - store_artifacts:
-          path: artifacts/vcanrs-x86_64-unknown-linux-gnu
+          path: artifacts
           destination: linux-build
+      - persist_to_workspace:
+          root: .
+          paths:
+            - artifacts
+
+  build-macos:
+    macos:
+      xcode: "12.5.1"
+    steps:
+      - checkout
+      - run:
+          name: Install Rust
+          command: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+      - run:
+          name: Config Git
+          command: |
+            git config --global init.defaultBranch master
+            git config --global user.email "test@gmail.com"
+            git config --global user.name "test"
+      - run:
+          name: Test
+          working_directory: ./cli
+          command: cargo test
+      - run:
+          name: Build Production
+          working_directory: ./cli
+          command: cargo build --locked --release --target x86_64-apple-darwin
+      - run:
+          name: Cucumber
+          working_directory: ./cucumber
+          command: |
+            gem install bundler -v 2.3.4
+            bundle install
+            BIN_PATH=../cli/target/x86_64-apple-darwin/release/vcanrs bundle exec cucumber --format pretty --format junit --out test-results
+      - store_test_results:
+          path: cucumber/test-results
+      - run:
+          name: Move artifacts
+          command: |
+            mkdir -p artifacts
+            mv cli/target/x86_64-apple-darwin/release/vcanrs artifacts/vcanrs-x86_64-apple-darwin
+      - store_artifacts:
+          path: artifacts
+          destination: macos-build
       - persist_to_workspace:
           root: .
           paths:
@@ -66,7 +110,9 @@ workflows:
   ci:
     jobs:
       - build-linux
+      - build-macos
       - publish-github-release:
           context: public
           requires:
             - build-linux
+            - build-macos
