@@ -28,9 +28,9 @@ jobs:
           command: |
             gem install bundler -v 2.3.4
             bundle install
-            BIN_PATH=cli/target/x86_64-unknown-linux-gnu/release/vcanrs bundle exec cucumber --format junit --out test-results
+            BIN_PATH=../cli/target/x86_64-unknown-linux-gnu/release/vcanrs bundle exec cucumber --format pretty --format junit --out test-results
       - store_test_results:
-          path: cli/test-results
+          path: cucumber/test-results
       - run:
           name: Move artifacts
           command: |
