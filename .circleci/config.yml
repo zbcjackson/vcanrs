@@ -31,13 +31,18 @@ jobs:
             BIN_PATH=cli/target/x86_64-unknown-linux-gnu/release/vcanrs bundle exec cucumber --format junit --out test-results
       - store_test_results:
           path: cli/test-results
+      - run:
+          name: Move artifacts
+          command: |
+            mkdir -p artifacts
+            mv cli/target/x86_64-unknown-linux-gnu/release/vcanrs artifacts/vcanrs-x86_64-unknown-linux-gnu
       - store_artifacts:
-          path: cli/target/x86_64-unknown-linux-gnu/release/vcanrs
+          path: artifacts/vcanrs-x86_64-unknown-linux-gnu
           destination: linux-build
       - persist_to_workspace:
           root: .
           paths:
-            - cli/target
+            - artifacts
 
   publish-github-release:
     machine:
@@ -54,8 +59,8 @@ jobs:
       - run:
           name: "Publish Release on GitHub"
           command: |
-            VERSION=$(cli/target/x86_64-unknown-linux-gnu/release/vcanrs --version | cut -d ' ' -f 2)
-            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./cli/target/x86_64-unknown-linux-gnu/release/vcanrs
+            VERSION=$(artifacts/vcanrs-x86_64-unknown-linux-gnu --version | cut -d ' ' -f 2)
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./artifacts
 
 workflows:
   ci:
