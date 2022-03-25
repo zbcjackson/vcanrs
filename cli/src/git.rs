@@ -17,6 +17,7 @@ pub enum DeltaStatus {
     Other
 }
 
+#[allow(dead_code)]
 pub struct Commit {
     pub(crate) id: String,
     pub(crate) message: String,

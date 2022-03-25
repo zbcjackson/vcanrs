@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use git2::Delta;
 use crate::git::{DeltaStatus, Git, Repo};
 use crate::churn_reporter::ChurnReporter;
 
