@@ -1,19 +1,22 @@
+use std::borrow::Borrow;
+use mockall_double::double;
 use std::collections::HashMap;
 use crate::git::{DeltaStatus, Git, Repo};
+#[double]
 use crate::churn_reporter::ChurnReporter;
 
 pub struct ChurnAnalyzer {
-    repo: Git,
-    reporter: ChurnReporter,
+    repo: Box<dyn Repo>,
+    reporter: Box<ChurnReporter>,
     stat: HashMap<String, i32>,
 }
 
 impl ChurnAnalyzer {
-    pub fn new(path: String) -> ChurnAnalyzer {
+    pub fn new(repo: Box<dyn Repo>, reporter: Box<ChurnReporter>) -> ChurnAnalyzer {
         ChurnAnalyzer {
-            repo: Git {path},
-            reporter: ChurnReporter {},
-            stat: Default::default()
+            repo,
+            reporter,
+            stat: Default::default(),
         }
     }
     pub fn analyze(&mut self) {
@@ -21,7 +24,7 @@ impl ChurnAnalyzer {
         for commit in commits {
             for delta in &commit.deltas {
                 match delta.status {
-                    DeltaStatus::Deleted => {let _ = &self.stat.remove(&delta.old_file);}
+                    DeltaStatus::Deleted => { let _ = &self.stat.remove(&delta.old_file); }
                     DeltaStatus::Renamed => {
                         self.stat.insert(delta.new_file.to_string(), *self.stat.get(&delta.old_file).unwrap());
                         if delta.lines > 0 {
@@ -39,5 +42,28 @@ impl ChurnAnalyzer {
 
     pub fn report(&self) {
         self.reporter.report(&self.stat);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use mockall::{automock, mock, predicate::*};
+    use crate::git::{Git, Repo, Commit};
+    use crate::churn_reporter::ChurnReporter;
+
+    mock! {
+        pub Git {
+        }
+        impl Repo for Git {
+            fn commits(&self) -> Vec<Commit>;
+        }
+    }
+    #[test]
+    fn show_empty_stat_when_no_commits() {
+        // let repo = Git{ path: "".to_string() };
+        // let reporter = ChurnReporter::new();
+        // let mut analyzer = ChurnAnalyzer::new_with(repo, reporter);
+        // analyzer.analyze();
     }
 }

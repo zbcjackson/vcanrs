@@ -35,6 +35,9 @@ pub struct Git {
 }
 
 impl Git {
+    pub fn new(path: String) -> Self {
+        Self {path}
+    }
     fn convert_time(time: &Time) -> Tm {
         let ts = time::Timespec::new(time.seconds() + (time.offset_minutes() as i64) * 60, 0);
         time::at(ts)

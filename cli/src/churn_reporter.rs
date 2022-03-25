@@ -2,12 +2,18 @@ use std::collections::HashMap;
 use term_table::row::Row;
 use term_table::table_cell::{Alignment, TableCell};
 use term_table::{TableBuilder, TableStyle};
+#[cfg(test)]
+use mockall::{automock};
 
 pub struct ChurnReporter {
 
 }
 
+#[cfg_attr(test, automock)]
 impl ChurnReporter {
+    pub fn new() -> Self {
+        Self{}
+    }
     pub fn report(&self, stat: &HashMap<String, i32>) {
         let mut vec:Vec<(&String, &i32)> = stat.iter().collect();
         vec.sort_by(|a, b| b.1.cmp(a.1));
