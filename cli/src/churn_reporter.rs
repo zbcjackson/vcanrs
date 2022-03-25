@@ -5,17 +5,22 @@ use term_table::{TableBuilder, TableStyle};
 #[cfg(test)]
 use mockall::{automock};
 
-pub struct ChurnReporter {
-
+pub trait Reporter {
+    fn report(&self, stat: &HashMap<String, i32>);
 }
+
+pub struct ChurnReporter {}
 
 #[cfg_attr(test, automock)]
 impl ChurnReporter {
     pub fn new() -> Self {
-        Self{}
+        Self {}
     }
-    pub fn report(&self, stat: &HashMap<String, i32>) {
-        let mut vec:Vec<(&String, &i32)> = stat.iter().collect();
+}
+
+impl Reporter for ChurnReporter {
+    fn report(&self, stat: &HashMap<String, i32>) {
+        let mut vec: Vec<(&String, &i32)> = stat.iter().collect();
         vec.sort_by(|a, b| b.1.cmp(a.1));
         let rows = vec.iter().map(|(file, count)| Row::new(vec![TableCell::new(file), TableCell::new_with_alignment(count, 1, Alignment::Right)])).collect();
         let table = TableBuilder::new().style(TableStyle::simple()).rows(rows).build();

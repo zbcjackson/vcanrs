@@ -1,18 +1,17 @@
-use std::borrow::Borrow;
 use mockall_double::double;
 use std::collections::HashMap;
-use crate::git::{DeltaStatus, Git, Repo};
+use crate::git::{DeltaStatus, Repo};
 #[double]
-use crate::churn_reporter::ChurnReporter;
+use crate::churn_reporter::Reporter;
 
 pub struct ChurnAnalyzer {
     repo: Box<dyn Repo>,
-    reporter: Box<ChurnReporter>,
+    reporter: Box<dyn Reporter>,
     stat: HashMap<String, i32>,
 }
 
 impl ChurnAnalyzer {
-    pub fn new(repo: Box<dyn Repo>, reporter: Box<ChurnReporter>) -> ChurnAnalyzer {
+    pub fn new(repo: Box<dyn Repo>, reporter: Box<dyn Reporter>) -> ChurnAnalyzer {
         ChurnAnalyzer {
             repo,
             reporter,
