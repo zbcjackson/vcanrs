@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use git2::Delta;
-use crate::git::{Git, Repo};
+use crate::git::{DeltaStatus, Git, Repo};
 use crate::churn_reporter::ChurnReporter;
 
 pub struct ChurnAnalyzer {
@@ -22,8 +22,8 @@ impl ChurnAnalyzer {
         for commit in commits {
             for delta in &commit.deltas {
                 match delta.status {
-                    Delta::Deleted => {let _ = &self.stat.remove(&delta.old_file);}
-                    Delta::Renamed => {
+                    DeltaStatus::Deleted => {let _ = &self.stat.remove(&delta.old_file);}
+                    DeltaStatus::Renamed => {
                         self.stat.insert(delta.new_file.to_string(), *self.stat.get(&delta.old_file).unwrap());
                         if delta.lines > 0 {
                             *self.stat.get_mut(&delta.new_file).unwrap() += 1;

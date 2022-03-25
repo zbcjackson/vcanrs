@@ -4,8 +4,17 @@ use time::Tm;
 pub struct Delta {
     pub(crate) old_file: String,
     pub(crate) new_file: String,
-    pub(crate) status: git2::Delta,
+    pub(crate) status: DeltaStatus,
     pub(crate) lines: i32,
+}
+
+pub enum DeltaStatus {
+    Added,
+    Deleted,
+    Modified,
+    Renamed,
+    Copied,
+    Other
 }
 
 pub struct Commit {
@@ -28,6 +37,16 @@ impl Git {
     fn convert_time(time: &Time) -> Tm {
         let ts = time::Timespec::new(time.seconds() + (time.offset_minutes() as i64) * 60, 0);
         time::at(ts)
+    }
+    fn convert_status(status: &git2::Delta) -> DeltaStatus {
+        match status {
+            git2::Delta::Added => {DeltaStatus::Added}
+            git2::Delta::Deleted => {DeltaStatus::Deleted}
+            git2::Delta::Modified => {DeltaStatus::Modified}
+            git2::Delta::Renamed => {DeltaStatus::Renamed}
+            git2::Delta::Copied => {DeltaStatus::Copied}
+            _ => {DeltaStatus::Other}
+        }
     }
 }
 
@@ -60,7 +79,12 @@ impl Repo for Git {
                 let patch = Patch::from_diff(&diff, i).unwrap().unwrap();
                 let delta = patch.delta();
                 let (_context, additions, deletions) = patch.line_stats().unwrap();
-                let d = Delta{old_file: String::from(delta.old_file().path().unwrap().to_str().unwrap()), new_file: String::from(delta.new_file().path().unwrap().to_str().unwrap()), status: delta.status(), lines: (additions + deletions) as i32 };
+                let d = Delta{
+                    old_file: String::from(delta.old_file().path().unwrap().to_str().unwrap()),
+                    new_file: String::from(delta.new_file().path().unwrap().to_str().unwrap()),
+                    status: Self::convert_status(&delta.status()),
+                    lines: (additions + deletions) as i32
+                };
                 c.deltas.push(d);
             }
             commits.push(c);
