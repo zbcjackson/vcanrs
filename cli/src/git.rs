@@ -1,4 +1,5 @@
 use git2::{DiffFindOptions, Patch, Repository, Time};
+use time::Tm;
 
 pub struct Delta {
     pub(crate) old_file: String,
@@ -10,7 +11,7 @@ pub struct Delta {
 pub struct Commit {
     pub(crate) id: String,
     pub(crate) message: String,
-    pub(crate) time: Time,
+    pub(crate) time: Tm,
     pub(crate) author: String,
     pub(crate) deltas: Vec<Delta>
 }
@@ -24,6 +25,10 @@ pub struct Git {
 }
 
 impl Git {
+    fn convert_time(time: &Time) -> Tm {
+        let ts = time::Timespec::new(time.seconds() + (time.offset_minutes() as i64) * 60, 0);
+        time::at(ts)
+    }
 }
 
 impl Repo for Git {
@@ -36,7 +41,8 @@ impl Repo for Git {
         for id in rev_walk {
             let id = id.unwrap();
             let commit = repo.find_commit(id).unwrap();
-            let mut c = Commit { id: commit.id().to_string(), message: commit.message().unwrap().to_string(), time: commit.time(), author: commit.author().to_string(), deltas: vec![] };
+            let time = Self::convert_time(&commit.time());
+            let mut c = Commit { id: commit.id().to_string(), message: commit.message().unwrap().to_string(), time, author: commit.author().to_string(), deltas: vec![] };
             let previous = if commit.parents().len() == 1 {
                 let parent = commit.parent(0).unwrap();
                 Some(parent.tree().unwrap())
