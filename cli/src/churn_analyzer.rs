@@ -84,6 +84,17 @@ mod tests {
         }, |stat: &HashMap<String, i32>| assert_stat(stat, vec![("c/c.txt", 2), ("b.txt", 1)]))
     }
 
+    #[test]
+    fn replace_file_stat_when_file_change_is_renamed_and_changed() {
+        verify_churn(|| {
+            vec![
+                commit(vec![add("a.txt"), add("b.txt")]),
+                commit(vec![modify("a.txt")]),
+                commit(vec![delta("a.txt", "c/c.txt", DeltaStatus::Renamed, 1)]),
+            ]
+        }, |stat: &HashMap<String, i32>| assert_stat(stat, vec![("c/c.txt", 3), ("b.txt", 1)]))
+    }
+
     fn verify_churn(commits: fn() -> Vec<Commit>, assert: fn(&HashMap<String, i32>) -> bool) {
         let mut repo = MockRepo::new();
         repo.expect_commits().returning(commits);
@@ -113,25 +124,25 @@ mod tests {
         commit
     }
 
-    fn delta(file: &str, status: DeltaStatus) -> Delta {
+    fn delta(old_file: &str, new_file: &str, status: DeltaStatus, lines: i32) -> Delta {
         Delta {
-            old_file: file.to_string(),
-            new_file: file.to_string(),
+            old_file: old_file.to_string(),
+            new_file: new_file.to_string(),
             status,
-            lines: 0,
+            lines,
         }
     }
 
     fn add(file: &str) -> Delta {
-        delta(file, DeltaStatus::Added)
+        delta(file, file, DeltaStatus::Added, 0)
     }
 
     fn modify(file: &str) -> Delta {
-        delta(file, DeltaStatus::Modified)
+        delta(file, file, DeltaStatus::Modified, 0)
     }
 
     fn delete(file: &str) -> Delta {
-        delta(file, DeltaStatus::Deleted)
+        delta(file, file, DeltaStatus::Deleted, 0)
     }
 
     fn rename(old_file: &str, new_file: &str) -> Delta {
