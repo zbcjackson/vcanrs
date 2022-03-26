@@ -5,13 +5,13 @@ use term_table::{TableBuilder, TableStyle};
 #[cfg(test)]
 use mockall::{automock};
 
+#[cfg_attr(test, automock)]
 pub trait Reporter {
     fn report(&self, stat: &HashMap<String, i32>);
 }
 
 pub struct ChurnReporter {}
 
-#[cfg_attr(test, automock)]
 impl ChurnReporter {
     pub fn new() -> Self {
         Self {}

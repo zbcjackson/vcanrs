@@ -24,9 +24,9 @@ pub fn run() {
     let args = Cli::parse();
     match &args.command {
         Commands::Churn {path} => {
-            let repo = Box::new(Git::new(path.to_string()));
-            let reporter = Box::new(ChurnReporter::new());
-            let mut churn_analyzer = ChurnAnalyzer::new(repo, reporter);
+            let repo = Git::new(path.to_string());
+            let reporter = ChurnReporter::new();
+            let mut churn_analyzer = ChurnAnalyzer::new(&repo, &reporter);
             churn_analyzer.analyze();
             churn_analyzer.report();
         }

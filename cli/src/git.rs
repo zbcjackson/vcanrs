@@ -1,6 +1,9 @@
 use git2::{DiffFindOptions, Patch, Repository, Time};
 use time::Tm;
 
+#[cfg(test)]
+use mockall::{automock};
+
 pub struct Delta {
     pub(crate) old_file: String,
     pub(crate) new_file: String,
@@ -26,6 +29,7 @@ pub struct Commit {
     pub(crate) deltas: Vec<Delta>
 }
 
+#[cfg_attr(test, automock)]
 pub trait Repo {
     fn commits(&self) -> Vec<Commit>;
 }

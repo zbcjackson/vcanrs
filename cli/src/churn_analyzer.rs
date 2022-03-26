@@ -1,17 +1,15 @@
-use mockall_double::double;
 use std::collections::HashMap;
 use crate::git::{DeltaStatus, Repo};
-#[double]
 use crate::churn_reporter::Reporter;
 
-pub struct ChurnAnalyzer {
-    repo: Box<dyn Repo>,
-    reporter: Box<dyn Reporter>,
+pub struct ChurnAnalyzer<'a> {
+    repo: &'a dyn Repo,
+    reporter: &'a dyn Reporter,
     stat: HashMap<String, i32>,
 }
 
-impl ChurnAnalyzer {
-    pub fn new(repo: Box<dyn Repo>, reporter: Box<dyn Reporter>) -> ChurnAnalyzer {
+impl <'a> ChurnAnalyzer<'a> {
+    pub fn new(repo: &'a dyn Repo, reporter: &'a dyn Reporter) -> ChurnAnalyzer<'a> {
         ChurnAnalyzer {
             repo,
             reporter,
@@ -47,22 +45,18 @@ impl ChurnAnalyzer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mockall::{automock, mock, predicate::*};
-    use crate::git::{Git, Repo, Commit};
-    use crate::churn_reporter::ChurnReporter;
+    use crate::git::MockRepo;
+    use crate::churn_reporter::MockReporter;
 
-    mock! {
-        pub Git {
-        }
-        impl Repo for Git {
-            fn commits(&self) -> Vec<Commit>;
-        }
-    }
     #[test]
     fn show_empty_stat_when_no_commits() {
-        // let repo = Git{ path: "".to_string() };
-        // let reporter = ChurnReporter::new();
-        // let mut analyzer = ChurnAnalyzer::new_with(repo, reporter);
-        // analyzer.analyze();
+        let mut repo = MockRepo::new();
+        repo.expect_commits().returning(|| {vec![]});
+        let mut reporter = MockReporter::new();
+        reporter.expect_report().withf(|stat: &HashMap<String, i32>| stat.is_empty()).return_const(());
+        let mut analyzer = ChurnAnalyzer::new(&repo, &reporter);
+
+        analyzer.analyze();
+        analyzer.report();
     }
 }
