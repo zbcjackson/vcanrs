@@ -1,4 +1,55 @@
 version: 2.1
+
+commands:
+  build-test:
+    parameters:
+      target:
+        default: "x86_64-unknown-linux-gnu"
+        type: string
+    steps:
+      - run: echo "Hello <<parameters.to>>"
+      - run:
+          name: Config Git
+          command: |
+            git config --global init.defaultBranch master
+            git config --global user.email "test@gmail.com"
+            git config --global user.name "test"
+      - run:
+          name: Install cargo2junit
+          command: cargo install cargo2junit
+      - run:
+          name: Test
+          working_directory: ./cli
+          command: cargo test -- -Z unstable-options --format json --report-time | cargo2junit > test-results.xml
+      - store_test_results:
+          path: cli/test-results.xml
+      - run:
+          name: Build Production
+          working_directory: ./cli
+          command: cargo build --locked --release --target <<parameters.target>>
+      - run:
+          name: Cucumber
+          working_directory: ./cucumber
+          command: |
+            gem install bundler -v 2.3.4
+            bundle install
+            BIN_PATH=../cli/target/<<parameters.target>>/release/vcanrs bundle exec cucumber --format pretty --format junit --out test-results
+      - store_test_results:
+          path: cucumber/test-results
+      - run:
+          name: Move artifacts
+          command: |
+            mkdir -p artifacts
+            mv cli/target/<<parameters.target>>/release/vcanrs artifacts/vcanrs-<<parameters.target>>
+      - store_artifacts:
+          path: artifacts
+          destination: build
+      - persist_to_workspace:
+          root: .
+          paths:
+            - artifacts
+
+
 jobs:
   build-linux:
     docker:
@@ -8,41 +59,9 @@ jobs:
       - run:
           name: Install dependencies
           command: apt update && apt install -y cmake pkg-config ruby ruby-dev
-      - run:
-          name: Config Git
-          command: |
-            git config --global init.defaultBranch master
-            git config --global user.email "test@gmail.com"
-            git config --global user.name "test"
-      - run:
-          name: Test
-          working_directory: ./cli
-          command: cargo test
-      - run:
-          name: Build Production
-          working_directory: ./cli
-          command: cargo build --locked --release --target x86_64-unknown-linux-gnu
-      - run:
-          name: Cucumber
-          working_directory: ./cucumber
-          command: |
-            gem install bundler -v 2.3.4
-            bundle install
-            BIN_PATH=../cli/target/x86_64-unknown-linux-gnu/release/vcanrs bundle exec cucumber --format pretty --format junit --out test-results
-      - store_test_results:
-          path: cucumber/test-results
-      - run:
-          name: Move artifacts
-          command: |
-            mkdir -p artifacts
-            mv cli/target/x86_64-unknown-linux-gnu/release/vcanrs artifacts/vcanrs-x86_64-unknown-linux-gnu
-      - store_artifacts:
-          path: artifacts
-          destination: linux-build
-      - persist_to_workspace:
-          root: .
-          paths:
-            - artifacts
+      - build-test:
+          target: x86_64-unknown-linux-gnu
+
 
   build-macos:
     macos:
@@ -52,41 +71,8 @@ jobs:
       - run:
           name: Install Rust
           command: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-      - run:
-          name: Config Git
-          command: |
-            git config --global init.defaultBranch master
-            git config --global user.email "test@gmail.com"
-            git config --global user.name "test"
-      - run:
-          name: Test
-          working_directory: ./cli
-          command: cargo test
-      - run:
-          name: Build Production
-          working_directory: ./cli
-          command: cargo build --locked --release --target x86_64-apple-darwin
-      - run:
-          name: Cucumber
-          working_directory: ./cucumber
-          command: |
-            gem install bundler -v 2.3.4
-            bundle install
-            BIN_PATH=../cli/target/x86_64-apple-darwin/release/vcanrs bundle exec cucumber --format pretty --format junit --out test-results
-      - store_test_results:
-          path: cucumber/test-results
-      - run:
-          name: Move artifacts
-          command: |
-            mkdir -p artifacts
-            mv cli/target/x86_64-apple-darwin/release/vcanrs artifacts/vcanrs-x86_64-apple-darwin
-      - store_artifacts:
-          path: artifacts
-          destination: macos-build
-      - persist_to_workspace:
-          root: .
-          paths:
-            - artifacts
+      - build-test:
+          target: x86_64-apple-darwin
 
   publish-github-release:
     machine:
