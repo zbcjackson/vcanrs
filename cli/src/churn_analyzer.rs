@@ -57,20 +57,31 @@ mod tests {
     fn count_file_changes() {
         verify_churn(|| {
             vec![
-                commit(vec![delta("a.txt", DeltaStatus::Added), delta("b.txt", DeltaStatus::Added)]),
-                commit(vec![delta("a.txt", DeltaStatus::Modified)]),
+                commit(vec![add("a.txt"), add("b.txt")]),
+                commit(vec![modify("a.txt")]),
             ]
-        }, |stat: &HashMap<String, i32>| assert_stat(stat, vec![("a.txt".to_string(), 2), ("b.txt".to_string(), 1)]))
+        }, |stat: &HashMap<String, i32>| assert_stat(stat, vec![("a.txt", 2), ("b.txt", 1)]))
     }
 
     #[test]
     fn remove_file_stat_when_file_change_is_deleted() {
         verify_churn(|| {
             vec![
-                commit(vec![delta("a.txt", DeltaStatus::Added), delta("b.txt", DeltaStatus::Added)]),
-                commit(vec![delta("a.txt", DeltaStatus::Deleted)]),
+                commit(vec![add("a.txt"), add("b.txt")]),
+                commit(vec![delete("a.txt" )]),
             ]
-        }, |stat: &HashMap<String, i32>| assert_stat(stat, vec![("b.txt".to_string(), 1)]));
+        }, |stat: &HashMap<String, i32>| assert_stat(stat, vec![("b.txt", 1)]));
+    }
+
+    #[test]
+    fn replace_file_stat_when_file_change_is_renamed() {
+        verify_churn(|| {
+            vec![
+                commit(vec![add("a.txt"), add("b.txt")]),
+                commit(vec![modify("a.txt")]),
+                commit(vec![rename("a.txt", "c/c.txt")]),
+            ]
+        }, |stat: &HashMap<String, i32>| assert_stat(stat, vec![("c/c.txt", 2), ("b.txt", 1)]))
     }
 
     fn verify_churn(commits: fn() -> Vec<Commit>, assert: fn(&HashMap<String, i32>) -> bool) {
@@ -84,8 +95,8 @@ mod tests {
         analyzer.report();
     }
 
-    fn assert_stat(stat: &HashMap<String, i32>, expected: Vec<(String, i32)>) -> bool {
-        stat.eq(&expected.into_iter().collect::<HashMap<_, _>>())
+    fn assert_stat(stat: &HashMap<String, i32>, expected: Vec<(&str, i32)>) -> bool {
+        stat.eq(&expected.into_iter().map(|(f, n)| (f.to_string(), n)).collect::<HashMap<_, _>>())
     }
 
     fn commit(deltas: Vec<Delta>) -> Commit {
@@ -108,6 +119,27 @@ mod tests {
             new_file: file.to_string(),
             status,
             lines: 0,
+        }
+    }
+
+    fn add(file: &str) -> Delta {
+        delta(file, DeltaStatus::Added)
+    }
+
+    fn modify(file: &str) -> Delta {
+        delta(file, DeltaStatus::Modified)
+    }
+
+    fn delete(file: &str) -> Delta {
+        delta(file, DeltaStatus::Deleted)
+    }
+
+    fn rename(old_file: &str, new_file: &str) -> Delta {
+        Delta {
+            old_file: old_file.to_string(),
+            new_file: new_file.to_string(),
+            status: DeltaStatus::Renamed,
+            lines: 0
         }
     }
 }
