@@ -1,7 +1,7 @@
 use crate::churn_analyzer::ChurnAnalyzer;
 
 use clap::{Parser, Subcommand};
-use crate::churn_reporter::ChurnReporter;
+use crate::reporter::TableReporter;
 use crate::git::Git;
 
 #[derive(Parser)]
@@ -25,7 +25,7 @@ pub fn run() {
     match &args.command {
         Commands::Churn {path} => {
             let repo = Git::new(path.to_string());
-            let reporter = ChurnReporter::new();
+            let reporter = TableReporter::new();
             let mut churn_analyzer = ChurnAnalyzer::new(&repo, &reporter);
             churn_analyzer.analyze();
             churn_analyzer.report();

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use crate::git::{DeltaStatus, Repo};
-use crate::churn_reporter::Reporter;
+use crate::reporter::Reporter;
 
 pub struct ChurnAnalyzer<'a> {
     repo: &'a dyn Repo,
@@ -46,7 +46,7 @@ impl<'a> ChurnAnalyzer<'a> {
 mod tests {
     use super::*;
     use crate::git::{Commit, Delta, MockRepo};
-    use crate::churn_reporter::MockReporter;
+    use crate::reporter::MockReporter;
 
     #[test]
     fn show_empty_stat_when_no_commits() {

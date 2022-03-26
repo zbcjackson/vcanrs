@@ -10,15 +10,15 @@ pub trait Reporter {
     fn report(&self, stat: &HashMap<String, i32>);
 }
 
-pub struct ChurnReporter {}
+pub struct TableReporter {}
 
-impl ChurnReporter {
+impl TableReporter {
     pub fn new() -> Self {
         Self {}
     }
 }
 
-impl Reporter for ChurnReporter {
+impl Reporter for TableReporter {
     fn report(&self, stat: &HashMap<String, i32>) {
         let mut vec: Vec<(&String, &i32)> = stat.iter().collect();
         vec.sort_by(|a, b| b.1.cmp(a.1));

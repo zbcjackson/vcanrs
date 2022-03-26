@@ -1,6 +1,6 @@
 mod git;
 mod churn_analyzer;
-mod churn_reporter;
+mod reporter;
 mod application;
 
 use crate::application::run;
