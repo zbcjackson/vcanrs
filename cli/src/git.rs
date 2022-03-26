@@ -4,6 +4,7 @@ use time::Tm;
 #[cfg(test)]
 use mockall::{automock};
 
+#[derive(Debug, Clone)]
 pub struct Delta {
     pub(crate) old_file: String,
     pub(crate) new_file: String,
@@ -11,6 +12,7 @@ pub struct Delta {
     pub(crate) lines: i32,
 }
 
+#[derive(Debug, Clone)]
 pub enum DeltaStatus {
     Added,
     Deleted,
@@ -21,6 +23,7 @@ pub enum DeltaStatus {
 }
 
 #[allow(dead_code)]
+#[derive(Debug, Clone)]
 pub struct Commit {
     pub(crate) id: String,
     pub(crate) message: String,

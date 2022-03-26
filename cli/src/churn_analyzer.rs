@@ -8,7 +8,7 @@ pub struct ChurnAnalyzer<'a> {
     stat: HashMap<String, i32>,
 }
 
-impl <'a> ChurnAnalyzer<'a> {
+impl<'a> ChurnAnalyzer<'a> {
     pub fn new(repo: &'a dyn Repo, reporter: &'a dyn Reporter) -> ChurnAnalyzer<'a> {
         ChurnAnalyzer {
             repo,
@@ -45,18 +45,55 @@ impl <'a> ChurnAnalyzer<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::git::MockRepo;
+    use crate::git::{Commit, Delta, MockRepo};
     use crate::churn_reporter::MockReporter;
 
     #[test]
     fn show_empty_stat_when_no_commits() {
+        verify_churn(|| vec![], |stat: &HashMap<String, i32>| stat.is_empty());
+    }
+
+    #[test]
+    fn count_file_changes() {
+        verify_churn(|| {
+            vec![
+                commit(vec![delta("a.txt", DeltaStatus::Added), delta("b.txt", DeltaStatus::Added)]),
+                commit(vec![delta("a.txt", DeltaStatus::Modified)])
+            ]
+        }, |stat: &HashMap<String, i32>| stat["a.txt"] == 2 && stat["b.txt"] == 1);
+    }
+
+    fn verify_churn(commits: fn() -> Vec<Commit>, assert: fn(&HashMap<String, i32>) -> bool) {
         let mut repo = MockRepo::new();
-        repo.expect_commits().returning(|| {vec![]});
+        repo.expect_commits().returning(commits);
         let mut reporter = MockReporter::new();
-        reporter.expect_report().withf(|stat: &HashMap<String, i32>| stat.is_empty()).return_const(());
+        reporter.expect_report().withf(assert).return_const(());
         let mut analyzer = ChurnAnalyzer::new(&repo, &reporter);
 
         analyzer.analyze();
         analyzer.report();
+    }
+
+    fn commit(deltas: Vec<Delta>) -> Commit {
+        let mut commit = Commit {
+            id: "".to_string(),
+            message: "".to_string(),
+            time: time::now(),
+            author: "".to_string(),
+            deltas: vec![],
+        };
+        for delta in deltas {
+            commit.deltas.push(delta);
+        }
+        commit
+    }
+
+    fn delta(file: &str, status: DeltaStatus) -> Delta {
+        Delta {
+            old_file: file.to_string(),
+            new_file: file.to_string(),
+            status,
+            lines: 0,
+        }
     }
 }
