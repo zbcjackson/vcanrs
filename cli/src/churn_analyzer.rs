@@ -50,7 +50,7 @@ mod tests {
 
     #[test]
     fn show_empty_stat_when_no_commits() {
-        verify_churn(|| vec![], |stat: &HashMap<String, i32>| stat.is_empty());
+        verify_churn(|| vec![], |stat: &HashMap<String, i32>| assert_stat(stat, vec![]));
     }
 
     #[test]
@@ -58,9 +58,19 @@ mod tests {
         verify_churn(|| {
             vec![
                 commit(vec![delta("a.txt", DeltaStatus::Added), delta("b.txt", DeltaStatus::Added)]),
-                commit(vec![delta("a.txt", DeltaStatus::Modified)])
+                commit(vec![delta("a.txt", DeltaStatus::Modified)]),
             ]
-        }, |stat: &HashMap<String, i32>| stat["a.txt"] == 2 && stat["b.txt"] == 1);
+        }, |stat: &HashMap<String, i32>| assert_stat(stat, vec![("a.txt".to_string(), 2), ("b.txt".to_string(), 1)]))
+    }
+
+    #[test]
+    fn remove_file_stat_when_file_change_is_deleted() {
+        verify_churn(|| {
+            vec![
+                commit(vec![delta("a.txt", DeltaStatus::Added), delta("b.txt", DeltaStatus::Added)]),
+                commit(vec![delta("a.txt", DeltaStatus::Deleted)]),
+            ]
+        }, |stat: &HashMap<String, i32>| assert_stat(stat, vec![("b.txt".to_string(), 1)]));
     }
 
     fn verify_churn(commits: fn() -> Vec<Commit>, assert: fn(&HashMap<String, i32>) -> bool) {
@@ -72,6 +82,10 @@ mod tests {
 
         analyzer.analyze();
         analyzer.report();
+    }
+
+    fn assert_stat(stat: &HashMap<String, i32>, expected: Vec<(String, i32)>) -> bool {
+        stat.eq(&expected.into_iter().collect::<HashMap<_, _>>())
     }
 
     fn commit(deltas: Vec<Delta>) -> Commit {
