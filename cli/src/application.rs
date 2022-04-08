@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use crate::churn_analyzer::ChurnAnalyzer;
 
 use clap::{Parser, Subcommand};
@@ -24,7 +25,7 @@ pub fn run() {
     let args = Cli::parse();
     match &args.command {
         Commands::Churn {path} => {
-            let repo = Git::new(path.to_string());
+            let repo = Git::new(&PathBuf::from(path));
             let reporter = TableReporter::new();
             let mut churn_analyzer = ChurnAnalyzer::new(&repo, &reporter);
             churn_analyzer.analyze();

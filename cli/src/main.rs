@@ -1,4 +1,4 @@
-mod git;
+pub mod git;
 mod churn_analyzer;
 mod reporter;
 mod application;

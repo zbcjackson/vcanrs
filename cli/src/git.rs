@@ -1,9 +1,11 @@
+use std::path::PathBuf;
 use git2::{DiffFindOptions, Patch, Repository, Time};
 use time::Tm;
 
 #[cfg(test)]
 use mockall::{automock};
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct Delta {
     pub(crate) old_file: String,
@@ -38,12 +40,12 @@ pub trait Repo {
 }
 
 pub struct Git {
-    pub(crate) path: String
+    pub(crate) path: PathBuf
 }
 
 impl Git {
-    pub fn new(path: String) -> Self {
-        Self {path}
+    pub fn new(path: &PathBuf) -> Self {
+        Self {path: PathBuf::from(path) }
     }
     fn convert_time(time: &Time) -> Tm {
         let ts = time::Timespec::new(time.seconds() + (time.offset_minutes() as i64) * 60, 0);
@@ -65,6 +67,9 @@ impl Repo for Git {
     fn commits(&self) -> Vec<Commit> {
         let mut commits = vec![];
         let repo = Repository::open(&self.path).unwrap();
+        if repo.is_empty().unwrap() {
+            return commits;
+        }
         let mut rev_walk = repo.revwalk().unwrap();
         rev_walk.set_sorting(git2::Sort::REVERSE | git2::Sort::TOPOLOGICAL).unwrap();
         rev_walk.push_head().unwrap();
