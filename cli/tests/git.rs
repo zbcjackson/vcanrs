@@ -47,6 +47,7 @@ impl GitContext {
     }
 
     fn rename_file(&self, old_file: &Path, new_file: &Path) {
+        fs::create_dir_all(self.path.join(new_file.parent().unwrap())).unwrap();
         fs::rename(self.path.join(old_file), self.path.join(new_file)).unwrap();
     }
 
@@ -123,6 +124,20 @@ fn rename_changes(ctx: &mut GitContext) {
     let commits = ctx.repo.as_ref().unwrap().commits();
     assert_eq!(commits[1].deltas[0].old_file, PathBuf::from("a.txt"));
     assert_eq!(commits[1].deltas[0].new_file, PathBuf::from("b.txt"));
+    assert_matches!(commits[1].deltas[0].status, DeltaStatus::Renamed);
+    assert_eq!(commits[1].deltas[0].lines, 0);
+}
+
+#[test_context(GitContext)]
+#[test]
+fn move_changes(ctx: &mut GitContext) {
+    ctx.add_or_change_file(Path::new("a.txt"));
+    ctx.add_commit();
+    ctx.rename_file(Path::new("a.txt"), Path::new("a/a.txt"));
+    ctx.add_commit();
+    let commits = ctx.repo.as_ref().unwrap().commits();
+    assert_eq!(commits[1].deltas[0].old_file, PathBuf::from("a.txt"));
+    assert_eq!(commits[1].deltas[0].new_file, PathBuf::from("a/a.txt"));
     assert_matches!(commits[1].deltas[0].status, DeltaStatus::Renamed);
     assert_eq!(commits[1].deltas[0].lines, 0);
 }
