@@ -51,7 +51,7 @@ mod tests {
 
     #[test]
     fn show_empty_stat_when_no_commits() {
-        verify_churn(|| vec![], |stat: &HashMap<String, i32>| assert_stat(stat, vec![]));
+        verify_churn(|| vec![], |stat: &HashMap<PathBuf, i32>| assert_stat(stat, vec![]));
     }
 
     #[test]
@@ -61,7 +61,7 @@ mod tests {
                 commit(vec![add("a.txt"), add("b.txt")]),
                 commit(vec![modify("a.txt")]),
             ]
-        }, |stat: &HashMap<String, i32>| assert_stat(stat, vec![("a.txt", 2), ("b.txt", 1)]))
+        }, |stat: &HashMap<PathBuf, i32>| assert_stat(stat, vec![("a.txt", 2), ("b.txt", 1)]))
     }
 
     #[test]
@@ -71,7 +71,7 @@ mod tests {
                 commit(vec![add("a.txt"), add("b.txt")]),
                 commit(vec![delete("a.txt" )]),
             ]
-        }, |stat: &HashMap<String, i32>| assert_stat(stat, vec![("b.txt", 1)]));
+        }, |stat: &HashMap<PathBuf, i32>| assert_stat(stat, vec![("b.txt", 1)]));
     }
 
     #[test]
@@ -82,7 +82,7 @@ mod tests {
                 commit(vec![modify("a.txt")]),
                 commit(vec![rename("a.txt", "c/c.txt")]),
             ]
-        }, |stat: &HashMap<String, i32>| assert_stat(stat, vec![("c/c.txt", 2), ("b.txt", 1)]))
+        }, |stat: &HashMap<PathBuf, i32>| assert_stat(stat, vec![("c/c.txt", 2), ("b.txt", 1)]))
     }
 
     #[test]
@@ -93,10 +93,10 @@ mod tests {
                 commit(vec![modify("a.txt")]),
                 commit(vec![delta("a.txt", "c/c.txt", DeltaStatus::Renamed, 1)]),
             ]
-        }, |stat: &HashMap<String, i32>| assert_stat(stat, vec![("c/c.txt", 3), ("b.txt", 1)]))
+        }, |stat: &HashMap<PathBuf, i32>| assert_stat(stat, vec![("c/c.txt", 3), ("b.txt", 1)]))
     }
 
-    fn verify_churn(commits: fn() -> Vec<Commit>, assert: fn(&HashMap<String, i32>) -> bool) {
+    fn verify_churn(commits: fn() -> Vec<Commit>, assert: fn(&HashMap<PathBuf, i32>) -> bool) {
         let mut repo = MockRepo::new();
         repo.expect_commits().returning(commits);
         let mut reporter = MockReporter::new();
@@ -107,8 +107,8 @@ mod tests {
         analyzer.report();
     }
 
-    fn assert_stat(stat: &HashMap<String, i32>, expected: Vec<(&str, i32)>) -> bool {
-        stat.eq(&expected.into_iter().map(|(f, n)| (f.to_string(), n)).collect::<HashMap<_, _>>())
+    fn assert_stat(stat: &HashMap<PathBuf, i32>, expected: Vec<(&str, i32)>) -> bool {
+        stat.eq(&expected.into_iter().map(|(f, n)| (PathBuf::from(f), n)).collect::<HashMap<_, _>>())
     }
 
     fn commit(deltas: Vec<Delta>) -> Commit {
@@ -127,8 +127,8 @@ mod tests {
 
     fn delta(old_file: &str, new_file: &str, status: DeltaStatus, lines: i32) -> Delta {
         Delta {
-            old_file: old_file.to_string(),
-            new_file: new_file.to_string(),
+            old_file: PathBuf::from(old_file),
+            new_file: PathBuf::from(new_file),
             status,
             lines,
         }
@@ -148,8 +148,8 @@ mod tests {
 
     fn rename(old_file: &str, new_file: &str) -> Delta {
         Delta {
-            old_file: old_file.to_string(),
-            new_file: new_file.to_string(),
+            old_file: PathBuf::from(old_file),
+            new_file: PathBuf::from(new_file),
             status: DeltaStatus::Renamed,
             lines: 0
         }
