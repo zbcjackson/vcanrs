@@ -1,11 +1,12 @@
 use std::collections::HashMap;
+use std::path::PathBuf;
 use crate::git::{DeltaStatus, Repo};
 use crate::reporter::Reporter;
 
 pub struct ChurnAnalyzer<'a> {
     repo: &'a dyn Repo,
     reporter: &'a dyn Reporter,
-    stat: HashMap<String, i32>,
+    stat: HashMap<PathBuf, i32>,
 }
 
 impl<'a> ChurnAnalyzer<'a> {
@@ -23,14 +24,14 @@ impl<'a> ChurnAnalyzer<'a> {
                 match delta.status {
                     DeltaStatus::Deleted => { let _ = &self.stat.remove(&delta.old_file); }
                     DeltaStatus::Renamed => {
-                        self.stat.insert(delta.new_file.to_string(), *self.stat.get(&delta.old_file).unwrap());
+                        self.stat.insert(delta.new_file.to_path_buf(), *self.stat.get(&delta.old_file).unwrap());
                         if delta.lines > 0 {
                             *self.stat.get_mut(&delta.new_file).unwrap() += 1;
                         }
                         self.stat.remove(&delta.old_file);
                     }
                     _ => {
-                        *self.stat.entry(delta.old_file.to_string()).or_insert(0) += 1;
+                        *self.stat.entry(delta.old_file.to_path_buf()).or_insert(0) += 1;
                     }
                 }
             }

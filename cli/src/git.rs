@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{PathBuf};
 use git2::{DiffFindOptions, Patch, Repository, Time};
 use time::Tm;
 
@@ -8,8 +8,8 @@ use mockall::{automock};
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct Delta {
-    pub old_file: String,
-    pub new_file: String,
+    pub old_file: PathBuf,
+    pub new_file: PathBuf,
     pub status: DeltaStatus,
     pub lines: i32,
 }
@@ -96,8 +96,8 @@ impl Repo for Git {
                 let delta = patch.delta();
                 let (_context, additions, deletions) = patch.line_stats().unwrap();
                 let d = Delta{
-                    old_file: String::from(delta.old_file().path().unwrap().to_str().unwrap()),
-                    new_file: String::from(delta.new_file().path().unwrap().to_str().unwrap()),
+                    old_file: delta.old_file().path().unwrap().to_path_buf(),
+                    new_file: delta.new_file().path().unwrap().to_path_buf(),
                     status: Self::convert_status(&delta.status()),
                     lines: (additions + deletions) as i32
                 };

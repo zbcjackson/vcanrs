@@ -71,8 +71,8 @@ fn add_changes(ctx: &mut GitContext) {
     ctx.add_or_change_file(Path::new("a.txt"));
     ctx.add_commit();
     let commits = ctx.repo.as_ref().unwrap().commits();
-    assert_eq!(commits[0].deltas[0].old_file, "a.txt");
-    assert_eq!(commits[0].deltas[0].new_file, "a.txt");
+    assert_eq!(commits[0].deltas[0].old_file, PathBuf::from("a.txt"));
+    assert_eq!(commits[0].deltas[0].new_file, PathBuf::from("a.txt"));
     assert_matches!(commits[0].deltas[0].status, DeltaStatus::Added);
     assert_eq!(commits[0].deltas[0].lines, 1);
 }
