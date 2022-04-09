@@ -1,11 +1,13 @@
 use test_context::{test_context, TestContext};
 use std::fs;
-use std::path::{PathBuf};
+use std::fs::{write};
+use std::path::{Path, PathBuf};
 use std::process::Command;
+use assert_matches::assert_matches;
 use chrono::Local;
 use tempfile::{tempdir, TempDir};
 extern crate vcanrs;
-use vcanrs::git::{Git, Repo};
+use vcanrs::git::{Git, Repo, DeltaStatus};
 
 
 #[derive(Default)]
@@ -34,6 +36,15 @@ impl GitContext {
     fn delete_repo(&self) {
         Command::new("rm").arg("-rf").arg(&self.path).output().expect("Delete repo error.");
     }
+
+    fn add_or_change_file(&self, file: &Path) {
+        write(self.path.join(file), rand::random::<i32>().to_string()).unwrap()
+    }
+
+    fn add_commit(&self) {
+        Command::new("git").arg("add").arg(".").current_dir(&self.path).output().expect("Git add change error.");
+        Command::new("git").arg("commit").arg("-m").arg("commit message").current_dir(&self.path).output().expect("Git add change error.");
+    }
 }
 
 impl TestContext for GitContext {
@@ -44,7 +55,6 @@ impl TestContext for GitContext {
     fn teardown(self) {
         self.delete_repo()
     }
-
 }
 
 
@@ -53,4 +63,16 @@ impl TestContext for GitContext {
 #[test]
 fn empty_repo(ctx: &mut GitContext) {
     assert_eq!(ctx.repo.as_ref().unwrap().commits().is_empty(), true);
+}
+
+#[test_context(GitContext)]
+#[test]
+fn add_changes(ctx: &mut GitContext) {
+    ctx.add_or_change_file(Path::new("a.txt"));
+    ctx.add_commit();
+    let commits = ctx.repo.as_ref().unwrap().commits();
+    assert_eq!(commits[0].deltas[0].old_file, "a.txt");
+    assert_eq!(commits[0].deltas[0].new_file, "a.txt");
+    assert_matches!(commits[0].deltas[0].status, DeltaStatus::Added);
+    assert_eq!(commits[0].deltas[0].lines, 1);
 }

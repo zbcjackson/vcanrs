@@ -8,10 +8,10 @@ use mockall::{automock};
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct Delta {
-    pub(crate) old_file: String,
-    pub(crate) new_file: String,
-    pub(crate) status: DeltaStatus,
-    pub(crate) lines: i32,
+    pub old_file: String,
+    pub new_file: String,
+    pub status: DeltaStatus,
+    pub lines: i32,
 }
 
 #[derive(Debug, Clone)]
@@ -27,11 +27,11 @@ pub enum DeltaStatus {
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct Commit {
-    pub(crate) id: String,
-    pub(crate) message: String,
-    pub(crate) time: Tm,
-    pub(crate) author: String,
-    pub(crate) deltas: Vec<Delta>
+    pub id: String,
+    pub message: String,
+    pub time: Tm,
+    pub author: String,
+    pub deltas: Vec<Delta>
 }
 
 #[cfg_attr(test, automock)]
@@ -40,7 +40,7 @@ pub trait Repo {
 }
 
 pub struct Git {
-    pub(crate) path: PathBuf
+    pub path: PathBuf
 }
 
 impl Git {
