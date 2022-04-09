@@ -1,12 +1,13 @@
 use test_context::{test_context, TestContext};
 use std::fs;
-use std::fs::{write};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use assert_matches::assert_matches;
 use chrono::Local;
 use tempfile::{tempdir, TempDir};
+
 extern crate vcanrs;
+
 use vcanrs::git::{Git, Repo, DeltaStatus};
 
 
@@ -15,7 +16,7 @@ struct GitContext {
     #[allow(dead_code)]
     tmp_dir: Option<TempDir>,
     path: PathBuf,
-    repo: Option<Git>
+    repo: Option<Git>,
 }
 
 impl GitContext {
@@ -38,7 +39,15 @@ impl GitContext {
     }
 
     fn add_or_change_file(&self, file: &Path) {
-        write(self.path.join(file), rand::random::<i32>().to_string()).unwrap()
+        fs::write(self.path.join(file), rand::random::<i32>().to_string()).unwrap()
+    }
+
+    fn delete_file(&self, file: &Path) {
+        fs::remove_file(self.path.join(file)).unwrap();
+    }
+
+    fn rename_file(&self, old_file: &Path, new_file: &Path) {
+        fs::rename(self.path.join(old_file), self.path.join(new_file)).unwrap();
     }
 
     fn add_commit(&self) {
@@ -56,7 +65,6 @@ impl TestContext for GitContext {
         self.delete_repo()
     }
 }
-
 
 
 #[test_context(GitContext)]
@@ -89,4 +97,32 @@ fn modify_changes(ctx: &mut GitContext) {
     assert_eq!(commits[1].deltas[0].new_file, PathBuf::from("a.txt"));
     assert_matches!(commits[1].deltas[0].status, DeltaStatus::Modified);
     assert_eq!(commits[1].deltas[0].lines, 2);
+}
+
+#[test_context(GitContext)]
+#[test]
+fn delete_changes(ctx: &mut GitContext) {
+    ctx.add_or_change_file(Path::new("a.txt"));
+    ctx.add_commit();
+    ctx.delete_file(Path::new("a.txt"));
+    ctx.add_commit();
+    let commits = ctx.repo.as_ref().unwrap().commits();
+    assert_eq!(commits[1].deltas[0].old_file, PathBuf::from("a.txt"));
+    assert_eq!(commits[1].deltas[0].new_file, PathBuf::from("a.txt"));
+    assert_matches!(commits[1].deltas[0].status, DeltaStatus::Deleted);
+    assert_eq!(commits[1].deltas[0].lines, 1);
+}
+
+#[test_context(GitContext)]
+#[test]
+fn rename_changes(ctx: &mut GitContext) {
+    ctx.add_or_change_file(Path::new("a.txt"));
+    ctx.add_commit();
+    ctx.rename_file(Path::new("a.txt"), Path::new("b.txt"));
+    ctx.add_commit();
+    let commits = ctx.repo.as_ref().unwrap().commits();
+    assert_eq!(commits[1].deltas[0].old_file, PathBuf::from("a.txt"));
+    assert_eq!(commits[1].deltas[0].new_file, PathBuf::from("b.txt"));
+    assert_matches!(commits[1].deltas[0].status, DeltaStatus::Renamed);
+    assert_eq!(commits[1].deltas[0].lines, 0);
 }
